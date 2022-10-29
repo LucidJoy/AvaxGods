@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useGlobalContext } from "../context";
 import { PageHOC, CustomInput, CustomButton } from "../components";
@@ -6,6 +7,8 @@ import { PageHOC, CustomInput, CustomButton } from "../components";
 const Home = () => {
   const { contract, walletAddress, setShowAlert } = useGlobalContext();
   const [playerName, setPlayerName] = useState("");
+
+  const navigate = useNavigate();
 
   const handleClick = async () => {
     try {
@@ -19,6 +22,12 @@ const Home = () => {
           type: "info",
           message: `${playerName} is being summoned!`,
         });
+      } else {
+        setShowAlert({
+          status: true,
+          type: "info",
+          message: `Player already exists!`,
+        });
       }
     } catch (error) {
       setShowAlert({
@@ -28,6 +37,17 @@ const Home = () => {
       });
     }
   };
+
+  useEffect(() => {
+    const checkForPlayerToken = async () => {
+      const playerExists = await contract.isPlayer(walletAddress);
+      const playerTokenExists = await contract.isPlayerToken(walletAddress);
+
+      if (playerExists && playerTokenExists) navigate("/create-battle");
+    };
+
+    checkForPlayerToken();
+  }, [contract]);
 
   return (
     <div className='flex flex-col'>

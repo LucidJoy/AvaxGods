@@ -23,6 +23,14 @@ export const GlobalContextProvider = ({ children }) => {
     type: "info",
     message: "",
   });
+  const [battleName, setBattleName] = useState("");
+  const [gameData, setGameData] = useState({
+    players: [],
+    pendingBattles: [],
+    activeBattle: null,
+  });
+  const [updateGameData, setUpdateGameData] = useState(0);
+
   const navigate = useNavigate();
 
   // set wallet addr to state
@@ -65,6 +73,8 @@ export const GlobalContextProvider = ({ children }) => {
         provider,
         walletAddress,
         setShowAlert,
+        updateGameData,
+        setUpdateGameData,
       });
     }
   }, [contract]);
@@ -79,6 +89,33 @@ export const GlobalContextProvider = ({ children }) => {
     }
   }, [showAlert]);
 
+  // Set game data to state
+  useEffect(() => {
+    const fetchGameData = async () => {
+      const fetchedBattles = await contract.getAllBattles();
+      const pendingBattles = fetchedBattles.filter(
+        (battle) => battle.battleStatus === 0
+      );
+      let activeBattle = null;
+
+      fetchedBattles.forEach((battle) => {
+        if (
+          battle.players.find(
+            (player) => player.toLowerCase() === walletAddress.toLowerCase()
+          )
+        ) {
+          if (battle.winner.startsWith("0x00")) {
+            activeBattle = battle;
+          }
+        }
+      });
+
+      setGameData({ pendingBattles: pendingBattles.slice(1), activeBattle });
+    };
+
+    if (contract) fetchGameData();
+  }, [contract, updateGameData]);
+
   return (
     <>
       <GlobalContext.Provider
@@ -87,6 +124,10 @@ export const GlobalContextProvider = ({ children }) => {
           walletAddress,
           showAlert,
           setShowAlert,
+          battleName,
+          setBattleName,
+          gameData,
+          setGameData,
         }}
       >
         {children}

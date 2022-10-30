@@ -1,14 +1,55 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { PageHOC } from "../components";
+import styles from "../styles";
+import { useGlobalContext } from "../context";
+import { PageHOC, CustomButton, CustomInput, GameLoad } from "../components";
 
 const CreateBattle = () => {
+  const [waitBattle, setWaitBattle] = useState(false);
+
+  const { contract, battleName, setBattleName, gameData } = useGlobalContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (gameData?.activeBattle?.battleStatus === 0) {
+      setWaitBattle(true);
+    }
+  }, [gameData]);
+
+  const handleClick = async () => {
+    if (!battleName || !battleName.trim()) return null;
+
+    try {
+      await contract.createBattle(battleName);
+
+      setWaitBattle(true);
+    } catch (error) {}
+  };
+
   return (
-    <div>
-      {/* <h1 className='text-5xl p-3'>Avax Gods</h1>
-      <h2 className='text-3xl p-3'>Web3 NFT Battle-style Card Game</h2>
-      <p className='text-xl p-3'>Made with 💜 by JavaScript Mastery</p> */}
-    </div>
+    <>
+      {waitBattle && <GameLoad />}
+
+      <div className='flex flex-col mb-5'>
+        <CustomInput
+          label='Battle'
+          placeholder='Enter battle name'
+          value={battleName}
+          handleValueChange={setBattleName}
+        />
+
+        <CustomButton
+          title='Create battle'
+          handleClick={handleClick}
+          restStyles='mt-6'
+        />
+      </div>
+
+      <p className={styles.infoText} onClick={() => navigate("/join-battle")}>
+        Or join already existing battles
+      </p>
+    </>
   );
 };
 
